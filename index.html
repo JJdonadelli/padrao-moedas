@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🪙 Jogo da Moeda</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .main-header {
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            padding: 1rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            text-align: center;
+            color: black;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .story-section {
+            background: rgba(255,255,255,0.95);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin: 1rem 0;
+            border-left: 5px solid #667eea;
+            font-style: italic;
+            color: black;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            margin: 2rem 0 1rem 0;
+            font-size: 1.5em;
+            text-align: center;
+        }
+
+        .patterns-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .pattern-card {
+            background: yellow;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 3px solid #ddd;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            height: 185px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pattern-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .pattern-card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pattern-card h4 {
+            margin: 0;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .pattern-emojis {
+            font-size: 2em;
+            margin: 10px 0;
+        }
+
+        .pattern-text {
+            font-size: 0.9em;
+            color: #666;
+            margin: 0;
+        }
+
+        .player-card {
+            border-color: #28a745;
+        }
+
+        .computer-card {
+            border-color: #dc3545;
+        }
+
+        .selected-patterns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .btn {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            color: white;
+        }
+
+        .sequence-display {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.5em;
+            margin: 1rem 0;
+            border: 2px solid #dee2e6;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+        }
+
+        .game-running {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #333;
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            margin: 1rem 0;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .win-message {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 1rem 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .lose-message {
+            background: linear-gradient(135deg, #dc3545, #e74c3c);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 1rem 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .expandable {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .expandable-header {
+            padding: 15px;
+            cursor: pointer;
+            background: rgba(255,255,255,0.1);
+            font-weight: bold;
+        }
+
+        .expandable-content {
+            padding: 15px;
+            background: rgba(255,255,255,0.9);
+            color: black;
+            display: none;
+        }
+
+        .expandable-content.open {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        th, td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            color: #ccc;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+
+        a {
+            color: #ffd700;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        a:hover {
+            color: #ffed4e;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .patterns-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .selected-patterns {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+ 
+        <div class="story-section">
+            <strong>📖 A primeira ocorrência de um padrão (ou, quem vai pagar o pastel?):</strong><br><br>
+            Dois amigos foram passear na feira. Quando chegaram à barraca de pastel, 
+            decidiram fazer uma aposta para ver quem iria pagar a conta. Cada um escolheu, 
+            de antemão, uma sequência de três resultados possíveis nos lançamentos de uma 
+            moeda – cara (c) e coroa (k). Em seguida, começaram a lançar a moeda repetidamente, 
+            combinando que o vencedor seria aquele cuja sequência aparecesse primeiro.
+        </div>
+
+        <h2 class="section-title">Escolha seu padrão</h2>
+        
+        <div class="patterns-grid" id="patterns-grid">
+            <!-- Padrões serão gerados via JavaScript -->
+        </div>
+
+        <div class="selected-patterns" id="selected-patterns" style="display: none;">
+            <!-- Padrões selecionados aparecerão aqui -->
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="start-game" disabled>🎲 Iniciar Jogo</button>
+            <button class="btn btn-secondary" id="reset-game" disabled>🔄 Jogar Novamente</button>
+        </div>
+
+        <div id="game-status"></div>
+        <div id="sequence-display"></div>
+        <div id="result-message"></div>
+
+        <div class="expandable">
+            <div class="expandable-header" onclick="toggleExpand('how-to-play')">
+                Como jogar
+            </div>
+            <div class="expandable-content" id="how-to-play">
+                <strong>1. Escolha seu padrão:</strong> Clique em uma das sequências de 3 resultados<br><br>
+                <strong>2. O computador, seu adversário, escolhe automaticamente</strong> outro padrão usando uma estratégia<br><br>
+                <strong>3. Clique em "🎲 Iniciar Jogo"</strong> e as moedas serão lançadas automaticamente<br><br>
+                <strong>4. Use "🔄 Jogar Novamente"</strong> para uma nova partida<br><br>
+                <strong>5. O jogo para automaticamente</strong> quando um dos padrões aparecer primeiro nos últimos 3 lançamentos<br><br>
+                <strong>5. Vence quem conseguir</strong> que sua sequência apareça primeiro!<br><br>
+                <strong>💡</strong> O adversário usa uma estratégia que lhe dá vantagem estatística!
+            </div>
+        </div>
+
+        <div class="expandable">
+            <div class="expandable-header" onclick="toggleExpand('strategy')">
+                Estratégia do adversário
+            </div>
+            <div class="expandable-content" id="strategy">
+                O adversário usa a seguinte estratégia baseada em probabilidades:<br><br>
+                <table>
+                    <tr>
+                        <th>Seu Padrão</th>
+                        <th>Escolha do Adversário</th>
+                    </tr>
+                    <tr><td>ccc</td><td>kcc</td></tr>
+                    <tr><td>cck</td><td>kcc</td></tr>
+                    <tr><td>ckc</td><td>cck</td></tr>
+                    <tr><td>ckk</td><td>cck</td></tr>
+                    <tr><td>kcc</td><td>kkc</td></tr>
+                    <tr><td>kck</td><td>kkc</td></tr>
+                    <tr><td>kkc</td><td>ckk</td></tr>
+                    <tr><td>kkk</td><td>ckk</td></tr>
+                </table>
+                Esta estratégia não é aleatória - ela maximiza as chances do adversário vencer baseada em análise probabilística!<br><br>
+                <strong>Veja as demonstração aqui</strong> 
+                <a href="https://arxiv.org/pdf/1406.2212" target="_blank">[1]</a>, 
+                <a href="http://mat.puc-rio.br/~nicolau/publ/papers/otario.pdf" target="_blank">[2]</a>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin: 2rem 0;">
+            <strong>Legenda:</strong> 🟡 = Cara (c) | 🔴 = Coroa (k)
+        </div>
+
+        <div class="footer">
+            Desenvolvido usando HTML, CSS e JavaScript<br>
+            Baseado no problema clássico dos padrões de Penney
+        </div>
+    </div>
+
+    <script>
+        // Estado do jogo
+        let gameState = {
+            gameStarted: false,
+            sequence: "",
+            playerPattern: "",
+            computerPattern: "",
+            gameFinished: false,
+            winner: "",
+            gameRunning: false
+        };
+
+        // Padrões e estratégia
+        const patterns = ["ccc", "cck", "ckc", "ckk", "kcc", "kck", "kkc", "kkk"];
+        const secondPattern = {
+            "ccc": "kcc", "cck": "kcc", "ckc": "cck", "ckk": "cck",
+            "kcc": "kkc", "kck": "kkc", "kkc": "ckk", "kkk": "ckk"
+        };
+
+        // Funções utilitárias
+        function patternToEmojis(pattern) {
+            return pattern.replace(/c/g, '🟡').replace(/k/g, '🔴');
+        }
+
+        function patternToText(pattern) {
+            return pattern.replace(/c/g, 'Cara').replace(/k/g, 'Coroa');
+        }
+
+        // Inicializar interface
+        function initializeInterface() {
+            const patternsGrid = document.getElementById('patterns-grid');
+            patternsGrid.innerHTML = '';
+
+            patterns.forEach(pattern => {
+                const patternDiv = document.createElement('div');
+                patternDiv.className = 'pattern-card';
+                patternDiv.innerHTML = `
+                    <h4>Padrão</h4>
+                    <div class="pattern-emojis">${patternToEmojis(pattern)}</div>
+                    <div class="pattern-text">${patternToText(pattern)}</div>
+                `;
+                patternDiv.onclick = () => selectPattern(pattern);
+                patternsGrid.appendChild(patternDiv);
+            });
+
+            // Event listeners
+            document.getElementById('start-game').onclick = startGame;
+            document.getElementById('reset-game').onclick = resetGame;
+        }
+
+        function selectPattern(pattern) {
+            if (gameState.gameRunning) return;
+
+            gameState.playerPattern = pattern;
+            gameState.computerPattern = secondPattern[pattern];
+
+            updateSelectedPatterns();
+            updateControls();
+        }
+
+        function updateSelectedPatterns() {
+            const selectedPatternsDiv = document.getElementById('selected-patterns');
+            
+            if (gameState.playerPattern) {
+                selectedPatternsDiv.style.display = 'grid';
+                selectedPatternsDiv.innerHTML = `
+                    <div class="pattern-card player-card">
+                        <h4>👤 Seu Padrão</h4>
+                        <div class="pattern-emojis">${patternToEmojis(gameState.playerPattern)}</div>
+                        <div class="pattern-text">${patternToText(gameState.playerPattern)}</div>
+                    </div>
+                    <div class="pattern-card computer-card">
+                        <h4>👽 Meu padrão 👀</h4>
+                        <div class="pattern-emojis">${patternToEmojis(gameState.computerPattern)}</div>
+                        <div class="pattern-text">${patternToText(gameState.computerPattern)}</div>
+                    </div>
+                `;
+            } else {
+                selectedPatternsDiv.style.display = 'none';
+            }
+        }
+
+        function updateControls() {
+            const startBtn = document.getElementById('start-game');
+            const resetBtn = document.getElementById('reset-game');
+
+            startBtn.disabled = !gameState.playerPattern || gameState.gameRunning;
+            resetBtn.disabled = gameState.gameRunning;
+
+            // Atualizar grid de padrões
+            const patternCards = document.querySelectorAll('.pattern-card');
+            patternCards.forEach(card => {
+                if (gameState.gameRunning) {
+                    card.classList.add('disabled');
+                } else {
+                    card.classList.remove('disabled');
+                }
+            });
+        }
+
+        function startGame() {
+            if (!gameState.playerPattern) return;
+
+            gameState.sequence = "";
+            gameState.gameStarted = true;
+            gameState.gameFinished = false;
+            gameState.winner = "";
+            gameState.gameRunning = true;
+
+            updateGameStatus();
+            updateControls();
+            runGame();
+        }
+
+        function resetGame() {
+            gameState.gameStarted = false;
+            gameState.sequence = "";
+            gameState.gameFinished = false;
+            gameState.winner = "";
+            gameState.gameRunning = false;
+
+            updateGameStatus();
+            updateSequenceDisplay();
+            updateResultMessage();
+            updateControls();
+        }
+
+        function updateGameStatus() {
+            const statusDiv = document.getElementById('game-status');
+            
+            if (gameState.gameRunning) {
+                statusDiv.innerHTML = '<div class="game-running">Lançando moedas...</div>';
+            } else {
+                statusDiv.innerHTML = '';
+            }
+        }
+
+        function updateSequenceDisplay() {
+            const sequenceDiv = document.getElementById('sequence-display');
+            
+            if (gameState.gameStarted && !gameState.gameFinished) {
+                if (gameState.sequence) {
+                    const sequenceDisplay = patternToEmojis(gameState.sequence);
+                    sequenceDiv.innerHTML = `<div class="sequence-display">${sequenceDisplay}</div>`;
+                } else {
+                    sequenceDiv.innerHTML = '<div class="sequence-display">Preparando...</div>';
+                }
+            } else if (gameState.gameFinished && gameState.sequence) {
+                const sequenceDisplay = patternToEmojis(gameState.sequence);
+                sequenceDiv.innerHTML = `<div class="sequence-display">${sequenceDisplay}</div>`;
+            } else {
+                sequenceDiv.innerHTML = '';
+            }
+        }
+
+        function updateResultMessage() {
+            const resultDiv = document.getElementById('result-message');
+            
+            if (gameState.gameFinished && gameState.winner) {
+                if (gameState.winner === "player") {
+                    resultDiv.innerHTML = '<div class="win-message">🎉 Parabéns!</div>';
+                    // Simular balloons effect
+                    setTimeout(() => {
+                        showBalloons();
+                    }, 100);
+                } else {
+                    resultDiv.innerHTML = '<div class="lose-message">🤷‍♀️ Tente novamente!</div>';
+                }
+            } else {
+                resultDiv.innerHTML = '';
+            }
+        }
+
+        function showBalloons() {
+            // Efeito simples de balões
+            const balloons = ['🎈', '🎉', '🎊', '🥳'];
+            let balloonsHtml = '';
+            for (let i = 0; i < 10; i++) {
+                const balloon = balloons[Math.floor(Math.random() * balloons.length)];
+                balloonsHtml += `<span style="position: fixed; top: ${Math.random() * 100}%; left: ${Math.random() * 100}%; font-size: 2em; animation: float 3s ease-in-out; z-index: 1000;">${balloon}</span>`;
+            }
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes float {
+                    0% { transform: translateY(100vh) rotate(0deg); opacity: 1; }
+                    100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            const balloonsContainer = document.createElement('div');
+            balloonsContainer.innerHTML = balloonsHtml;
+            document.body.appendChild(balloonsContainer);
+            
+            setTimeout(() => {
+                document.body.removeChild(balloonsContainer);
+                document.head.removeChild(style);
+            }, 3000);
+        }
+
+        async function runGame() {
+            while (gameState.gameRunning && !gameState.gameFinished) {
+                // Sortear resultado
+                const flipResult = Math.random() < 0.5 ? "c" : "k";
+                gameState.sequence += flipResult;
+
+                updateSequenceDisplay();
+
+                // Verificar vitória se temos pelo menos 3 lançamentos
+                if (gameState.sequence.length >= 3) {
+                    const window = gameState.sequence.slice(-3); // Últimos 3 sorteios
+
+                    if (window === gameState.playerPattern) {
+                        gameState.winner = "player";
+                        gameState.gameFinished = true;
+                        gameState.gameRunning = false;
+                        break;
+                    } else if (window === gameState.computerPattern) {
+                        gameState.winner = "computer";
+                        gameState.gameFinished = true;
+                        gameState.gameRunning = false;
+                        break;
+                    }
+                }
+
+                // Pausa entre lançamentos
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            // Atualizar interface final
+            updateGameStatus();
+            updateSequenceDisplay();
+            updateResultMessage();
+            updateControls();
+        }
+
+        function toggleExpand(id) {
+            const content = document.getElementById(id);
+            content.classList.toggle('open');
+        }
+
+        // Inicializar quando a página carregar
+        document.addEventListener('DOMContentLoaded', initializeInterface);
+    </script>
+</body>
+</html>
