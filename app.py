@@ -93,13 +93,13 @@ a:hover {
 
 .sequence-display {
     background: #f8f9fa;
-    padding: 2rem;
+    padding: 1rem;
     border-radius: 15px;
     text-align: center;
-    font-size: 2em;
+    font-size: 1.5em;
     margin: 1rem 0;
     border: 2px solid #dee2e6;
-    min-height: 100px;
+    min-height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -139,6 +139,23 @@ a:hover {
     color:black;
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
+
+.game-running {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #333;
+    padding: 1rem;
+    border-radius: 10px;
+    text-align: center;
+    margin: 1rem 0;
+    font-weight: bold;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -169,20 +186,13 @@ if 'game_finished' not in st.session_state:
     st.session_state.game_finished = False
 if 'winner' not in st.session_state:
     st.session_state.winner = ""
-
-# Cabeçalho principal
-st.markdown("""
-<div class="main-header">
-    <h1>Jogo da Moeda</h1>
-    <h3>A primeira ocorrencia de um padrão</h3>
-    <p style="font-size: 1.2em; margin-top: 10px;">(ou, quem vai pagar o pastel?)</p>
-</div>
-""", unsafe_allow_html=True)
+if 'game_running' not in st.session_state:
+    st.session_state.game_running = False
 
 # História do jogo
 st.markdown("""
 <div class="story-section">
-    <strong>📖 História do Jogo:</strong><br><br>
+    <strong>📖 A primeira ocorrência de um padrão (ou, quem vai pagar o pastel?):</strong><br><br>
     Dois amigos foram passear na feira. Quando chegaram à barraca de pastel, 
     decidiram fazer uma aposta para ver quem iria pagar a conta. Cada um escolheu, 
     de antemão, uma sequência de três resultados possíveis nos lançamentos de uma 
@@ -204,7 +214,7 @@ for i, pattern in enumerate(patterns):
         text_pattern = pattern_to_text(pattern)
         
         if st.button(f"{emoji_pattern}\n{text_pattern}", key=f"pattern_{pattern}", 
-                    use_container_width=True):
+                    use_container_width=True, disabled=st.session_state.game_running):
             selected_pattern = pattern
 
 # Atualizar padrão selecionado
@@ -239,85 +249,131 @@ if st.session_state.player_pattern:
         """, unsafe_allow_html=True)
 
 # Controles do jogo
-st.subheader("🎮 Controles do Jogo")
+# st.subheader("Controles do Jogo")
 
 col1, col2, col3 = st.columns([1, 1, 1])
 
 with col1:
-    if st.button("🎮 Iniciar Jogo", type="primary", use_container_width=True,
-                disabled=(not st.session_state.player_pattern) or 
-                         (st.session_state.game_started and not st.session_state.game_finished)):
+    if st.button("🎲 Iniciar Jogo", type="primary", use_container_width=True,
+                disabled=(not st.session_state.player_pattern) or st.session_state.game_running):
         if st.session_state.player_pattern:
             st.session_state.sequence = ""
             st.session_state.game_started = True
             st.session_state.game_finished = False
             st.session_state.winner = ""
-            st.rerun()
-
-with col2:
-    if st.button("🪙 Lançar Moeda 🔴", use_container_width=True,
-                disabled=not st.session_state.game_started or st.session_state.game_finished):
-        if st.session_state.game_started and not st.session_state.game_finished:
-            # Sortear resultado
-            flip_result = random.choice(["c", "k"])
-            st.session_state.sequence += flip_result
-            
-            # Verificar vitória se temos pelo menos 3 lançamentos
-            if len(st.session_state.sequence) >= 3:
-                window = st.session_state.sequence[-3:]  # últimos 3 sorteios
-                
-                if window == st.session_state.player_pattern:
-                    st.session_state.winner = "player"
-                    st.session_state.game_finished = True
-                elif window == st.session_state.computer_pattern:
-                    st.session_state.winner = "computer"
-                    st.session_state.game_finished = True
-            
+            st.session_state.game_running = True
             st.rerun()
 
 with col3:
-    if st.button("🔄 Jogar Novamente", use_container_width=True,
-                disabled=not st.session_state.game_finished):
-        # Resetar estado
+    # CORREÇÃO: Simplificar a condição do disabled
+    reset_disabled = st.session_state.game_running
+    if st.button("🔄 Jogar Novamente", use_container_width=True, disabled=reset_disabled):
+        # Resetar apenas os estados do jogo, mantendo os padrões escolhidos
         st.session_state.game_started = False
         st.session_state.sequence = ""
         st.session_state.game_finished = False
         st.session_state.winner = ""
+        st.session_state.game_running = False
+        # Os padrões (player_pattern e computer_pattern) são mantidos
         st.rerun()
 
-# Display da sequência
-if st.session_state.game_started:
+# with col3:
+#     if st.button("🔄 Reset Completo", use_container_width=True, disabled=st.session_state.game_running):
+#         # Resetar TODOS os estados (incluindo padrões)
+#         for key in ['game_started', 'sequence', 'player_pattern', 'computer_pattern', 
+#                    'game_finished', 'winner', 'game_running']:
+#             if key in st.session_state:
+#                 if key in ['sequence', 'player_pattern', 'computer_pattern', 'winner']:
+#                     st.session_state[key] = ""
+#                 else:
+#                     st.session_state[key] = False
+#         st.rerun()
+
+# Status do jogo
+if st.session_state.game_running:
+    st.markdown("""
+    <div class="game-running">
+        Lançando moedas... 
+    </div>
+    """, unsafe_allow_html=True)
+
+# Container para o placeholder da sequência (ÚNICO DISPLAY)
+sequence_placeholder = st.empty()
+
+# Display inicial quando jogo começar
+if st.session_state.game_started and not st.session_state.game_finished:
     if st.session_state.sequence:
         sequence_display = pattern_to_emojis(st.session_state.sequence)
-        st.markdown(f"""
+        sequence_placeholder.markdown(f"""
         <div class="sequence-display">
-            <strong>Sequência Atual:</strong><br>
             {sequence_display}
         </div>
         """, unsafe_allow_html=True)
     else:
-        st.markdown("""
+        sequence_placeholder.markdown("""
         <div class="sequence-display">
-            Clique em "Lançar Moeda" para começar!
+            Preparando...
         </div>
         """, unsafe_allow_html=True)
 
+# Lógica do jogo automático
+if st.session_state.game_running and not st.session_state.game_finished:
+    # Sortear resultado
+    flip_result = random.choice(["c", "k"])
+    st.session_state.sequence += flip_result
+    
+    # Atualizar display (ÚNICO LUGAR)
+    sequence_display = pattern_to_emojis(st.session_state.sequence)
+    sequence_placeholder.markdown(f"""
+    <div class="sequence-display">
+        {sequence_display}
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Verificar vitória se temos pelo menos 3 lançamentos
+    if len(st.session_state.sequence) >= 3:
+        window = st.session_state.sequence[-3:]  # Últimos 3 sorteios
+        
+        if window == st.session_state.player_pattern:
+            st.session_state.winner = "player"
+            st.session_state.game_finished = True
+            st.session_state.game_running = False
+            st.rerun()  # Força atualização imediata
+        elif window == st.session_state.computer_pattern:
+            st.session_state.winner = "computer"
+            st.session_state.game_finished = True
+            st.session_state.game_running = False
+            st.rerun()  # Força atualização imediata
+    
+    # Pausa entre lançamentos apenas se o jogo não terminou
+    if st.session_state.game_running:
+        time.sleep(1)
+        st.rerun()
+
+# Mostrar sequência final quando jogo terminar
+if st.session_state.game_finished and st.session_state.sequence:
+    sequence_display = pattern_to_emojis(st.session_state.sequence)
+    sequence_placeholder.markdown(f"""
+    <div class="sequence-display">
+        {sequence_display}
+    </div>
+    """, unsafe_allow_html=True)
+
 # Resultado final
-if st.session_state.game_finished:
+if st.session_state.game_finished and st.session_state.winner:
     if st.session_state.winner == "player":
         st.markdown("""
         <div class="win-message">
-            🎉 Parabéns! 🎉
+            🎉 Parabéns!
         </div>
         """, unsafe_allow_html=True)
         st.balloons()
     else:
         st.markdown("""
         <div class="lose-message">
-            🤷‍♀️ Tente novamente! 
+            🤷‍♀️ Tente novamente!
         </div>
         """, unsafe_allow_html=True)
-
 
 # Informações adicionais
 with st.expander("Como jogar"):
@@ -326,9 +382,13 @@ with st.expander("Como jogar"):
     
     **2. O computador, seu adversário, escolhe automaticamente** outro padrão usando uma estratégia
     
-    **3. Lance a moeda** repetidamente clicando no botão "Lançar Moeda"
+    **3. Clique em "🎲 Iniciar Jogo"** e as moedas serão lançadas automaticamente
     
-    **4. Vence quem conseguir** que sua sequência apareça primeiro nos últimos 3 lançamentos
+    **4. Use "🔄 Jogar Novamente"** para uma nova partida 
+    
+    **5. O jogo para automaticamente** quando um dos padrões aparecer primeiro nos últimos 3 lançamentos
+    
+    **5. Vence quem conseguir** que sua sequência apareça primeiro!
     
     **💡** O adversário usa uma estratégia que lhe dá vantagem estatística!
     """)
@@ -337,7 +397,7 @@ with st.expander("Estratégia do adversário"):
     st.markdown("""
     O adversário usa a seguinte estratégia baseada em probabilidades:
     
-    | Seu Padrão | Escolha |
+    | Seu Padrão | Escolha do Adversário |
     |------------|---------------------|
     | ccc | kcc |
     | cck | kcc |
@@ -358,12 +418,11 @@ with st.expander("Estratégia do adversário"):
 st.markdown("---")
 st.markdown("**Legenda:** 🟡 = Cara (c) | 🔴 = Coroa (k)")
 
-
 # Footer
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: #666; margin-top: 2rem;">
     Desenvolvido usando Streamlit<br>
-    Baseado no problema clássico dos padrões de Penney
+    Baseado no problema clássico dos padrões de Penney<br>
 </div>
 """, unsafe_allow_html=True)
